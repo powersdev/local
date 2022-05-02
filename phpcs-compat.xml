@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<ruleset name="PHP Compatibility">
+	<description>PHP Compatibility</description>
+
+	<rule ref="PHPCompatibility"/>
+	<rule ref="PHPCompatibilityWP"/>
+
+	<config name="testVersion" value="8.0-"/>
+
+	<file>/app/wordpress</file>
+
+	<arg name="extensions" value="php"/>
+	<arg name="report" value="full"/>
+	<arg name="colors"/>
+	<arg value="sp"/>
+</ruleset>

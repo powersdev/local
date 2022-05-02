@@ -1,0 +1,87 @@
+name: boilerplate
+services:
+  appserver:
+    overrides:
+      environment:
+        PHP_IDE_CONFIG: "serverName=appserver"
+        XDEBUG_MODE: debug
+    build_as_root:
+      - apt-get update -y && apt-get upgrade -y
+      - apt-get install locales python3-pip neovim jq -y
+      - locale-gen en_US.UTF-8
+      - |
+        if [ "$LANDO_HOST_OS" = "win32" ]; then
+          apt-get install dos2unix -y && 
+          find /app/bin -type f -print0 | xargs -0 dos2unix &&
+          find /app/config -type f -print0 | xargs -0 dos2unix
+        fi
+    build:
+      - /app/bin/build
+    run:
+      - /app/bin/run
+  pma:
+    type: phpmyadmin
+    hosts: [database]
+  mailhog:
+    type: mailhog
+    portforward: true
+    hogfrom: [appserver]
+recipe: wordpress
+config:
+  xdebug: false
+  php: "7.4"
+  database: mysql
+  webroot: wordpress
+  composer_version: 2 
+  config:
+    database: config/mysql.conf
+    php: config/php.ini
+tooling:
+  setup:
+    service: appserver
+    description: Initial site setup
+    dir: /app
+    cmd: /app/bin/setup
+  pull:
+    service: appserver
+    description: Pull data from production
+    dir: /app/wordpress
+    cmd: /app/bin/pull
+  vip-import:
+    service: appserver
+    description: Import one or many VaultPress db exports
+    dir: /app/wordpress
+    cmd: /app/bin/vip_import
+  xdebug-on:
+    service: appserver
+    description: Enable xdebug for apache.
+    cmd: "docker-php-ext-enable xdebug && /etc/init.d/apache2 reload && echo 'Enabled xdebug'"
+    user: root
+  xdebug-off:
+    service: appserver
+    description: Disable xdebug for apache.
+    cmd: "rm /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && /etc/init.d/apache2 reload && echo 'Disabled xdebug'"
+    user: root
+  wpdebug:
+    service: appserver
+    description: WP CLI
+    cmd: wp
+    env:
+      XDEBUG_TRIGGER: 1
+  phpcs:
+    service: appserver
+    description: PHP Codesniffer
+    cmd: /app/tools/vendor/bin/phpcs
+  phpcbf:
+    service: appserver
+    description: PHP Code Beautifier and Formatter
+    cmd: /app/tools/vendor/bin/phpcbf
+  phpcs-compat:
+    service: appserver
+    description: PHP Codesniffer
+    cmd: /app/tools/vendor/bin/phpcs --standard=/app/phpcs-compat.xml
+  update:
+    service: appserver
+    description: Update Core, Plugins, and Themes
+    dir: /app/wordpress
+    cmd: wp core update && wp plugin update --all && wp theme update --all

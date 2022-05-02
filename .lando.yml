@@ -1,0 +1,19 @@
+name: boilerplate
+proxy: # these have to match the name above
+  appserver:
+    - boilerplate.lndo.site
+  pma:
+    - pma.boilerplate.lndo.site
+  mailhog:
+    - mh.boilerplate.lndo.site
+services:
+  appserver:
+    overrides:
+      environment:
+        # General site information
+        wpengine_name: boilerplate
+        repo: git@github.com:powersdev/scaffold
+        multisite: no
+        # SSH Keys
+        repo_ssh_key: id_rsa
+        wpe_ssh_key: id_rsa

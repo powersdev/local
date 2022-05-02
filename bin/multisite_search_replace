@@ -1,0 +1,188 @@
+#!/usr/bin/python3
+
+import json, os, re, subprocess, tldextract
+from urllib.parse import urlparse
+
+# Grab domain vars from env
+LOCAL_DOMAIN = os.environ.get('LANDO_APP_NAME') + '.lndo.site'
+
+
+def get_primary_domain():
+    output = subprocess.check_output(
+        'wp db query "{query}" --skip-column-names'
+            .format(query="SELECT domain,path from wp_blogs where blog_id = 1"),
+        shell=True)
+
+    url = "".join(output.decode().split())
+
+    return url
+
+
+# Set new current site value
+def set_current_site():
+    domain = get_primary_domain()
+
+    command = 'wp config set DOMAIN_CURRENT_SITE "{}" --add'.format(domain)
+
+    os.system(command)
+
+
+# Generate command list to update site URLs
+def update_tables(blog_id, old_url, new_url):
+    # Set table prefix based on site ID
+    table_prefix = "{id}_".format(id=blog_id) if blog_id > 1 else ""
+
+    commands = ["""
+        UPDATE wp_{prefix}options
+        SET option_value = '{url}'
+        WHERE option_name = 'siteurl'
+        OR option_name = 'home'
+    """.format(prefix=table_prefix, url=new_url)]
+
+    # Update options table for site
+
+    parsed = urlparse(new_url)
+
+    # Update network blogs table
+    commands.append("""
+        UPDATE wp_blogs
+        SET domain = '{domain}', path = '{path}'
+        WHERE blog_id = {blog_id}
+    """.format(domain=parsed.hostname, path=parsed.path, blog_id=blog_id)
+                    )
+
+    if blog_id == 1:
+        commands.append("""
+            UPDATE wp_site
+            SET domain = '{domain}', path = '{path}'
+            WHERE id = 1
+        """.format(domain=parsed.hostname, path=parsed.path[:-1], blog_id=blog_id)
+                        )
+
+    # Run each command
+    for cmd in commands:
+        cmd = 'wp db query "{query}"'.format(query=" ".join(cmd.split()) + ";")
+
+        subprocess.check_output(cmd, shell=True)
+
+    uploads_suffix = "/wp-content/uploads"
+
+    prod = old_url.replace("https://", "")[:-1]
+    prod_uploads = prod + uploads_suffix
+
+    local = new_url.replace("https://", "")[:-1]
+    local_uploads = local + uploads_suffix
+
+    command = 'wp search-replace "{old}" "{new}" --all-tables --precise --skip-columns=guid --skip-tables=wp_*yoast*'
+
+    print('\nNow Replacing:')
+    print('"{old}" -> "{new}"\n'.format(old=prod, new=local))
+
+    while True:
+        output = subprocess.check_output(
+            command.format(
+                old=prod,
+                new=local,
+            ),
+            shell=True
+        ).decode()
+
+        print(output)
+
+        if "0 replacements" in output:
+            break
+
+
+# Fetch list of blogs
+def get_blogs():
+    try:
+        output = subprocess.check_output(
+            "wp site list --fields=blog_id,url --format=json",
+            shell=True)
+
+        # Parse JSON
+        return json.loads(output)
+    except:
+        return []
+
+
+# Restructure the prod URL for use locally
+def format_url(blog_url):
+    url = urlparse(blog_url).hostname
+
+    prod = get_primary_domain()
+
+    if "lndo.site" not in prod:
+        x = tldextract.extract(prod)
+
+        prod = "{}.{}".format(x.domain, x.suffix)
+
+    for item in [prod, ".com", "www.", "."]:
+        url = url.replace(item, "")
+
+    # Generate the new, local, subfolder-based url
+    return "https://" + LOCAL_DOMAIN + "/" + (url + "/" if url else "")
+
+
+def update_htaccess(url):
+    url = "https://" + "".join(url.split())
+
+    with open("/app/wordpress/.htaccess", "r") as reader:
+        lines = reader.readlines()
+
+    def change_url(line):
+        if "wp-content/uploads" in line:
+            line = "RewriteRule ^(wp-content/uploads/.+)$ {url}$1 [L,R=301,NE]".format(url=url)
+            line = " ".join(line.split()) + "\n"
+
+        return line
+
+    lines = map(change_url, lines)
+
+    with open("/app/wordpress/.htaccess", "w") as writer:
+        for line in lines:
+            writer.write(line)
+
+
+# Main method
+def main():
+    # Store current site in wp-config
+    set_current_site()
+
+    # Filter empty or already replaced blogs
+    blogs = list(filter(
+        lambda x: x['url'] != '/' and LOCAL_DOMAIN not in x['url'],
+        get_blogs()))
+
+    # Exit if already done
+    if len(blogs) == 0:
+        print("No Blogs Need Updating")
+        return
+
+    # Redirect media to prod
+    update_htaccess(get_primary_domain())
+
+    # Loop through blogs and determine what to update
+    updates = []
+
+    for blog in blogs:
+        # Store the blog id as an integer
+        blog_id = int(blog['blog_id'])
+
+        # Format the url of the blog as needed
+        new_url = format_url(blog['url'])
+
+        # Update the tables for this blog
+        args = (blog_id, blog['url'], new_url)
+        updates.append(args)
+
+    # Run Updates
+    for update in updates:
+        update_tables(*update)
+
+    # Reset the wp-config value
+    set_current_site()
+
+
+# Run
+main()

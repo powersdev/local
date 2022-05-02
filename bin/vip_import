@@ -1,0 +1,73 @@
+#!/usr/bin/python3
+
+import os, sys, tarfile
+
+# Append the contents of each sql file to the main sql file 
+def concat_file(path):
+    os.system("mkdir -p /tmp/data")
+    os.system("tar -xvf {path} -C /tmp/data".format(path=path))
+    os.system("cd /tmp/data/sql && cat *.sql >> /app/mysql.sql")
+    os.system("rm -rf /tmp/data")
+
+
+# Run the sql import
+def import_sql():
+    os.system("wp db clean --yes")
+
+    dbsize = os.path.getsize('/app/mysql.sql')/(1024**3)
+    print("Importing {size} GB database dump...".format(size=round(dbsize,2)))
+
+    if dbsize > 0.4:
+        print("This may take a long time.")
+
+    os.system("wp db import /app/mysql.sql")
+
+
+# Main method
+def main():
+
+    # Bail if no args
+    if len(sys.argv) == 0:
+        print("Missing file(s).")
+        return
+
+    # Wipe the sql file
+    try:
+        os.system('echo "" > /app/mysql.sql')
+    except:
+        pass
+
+    # Append the sql files in each db dump
+    for path in sys.argv:
+        path = "/app/" + path
+        if os.path.isfile(path):
+            concat_file(path)
+
+    # Run the sql export
+    import_sql()
+
+    # Clean up the mysql file
+    os.system("rm /app/mysql.sql")
+
+    # Check multisite status
+    multisite = os.environ.get("multisite")
+
+    # Run the appropriate search & replace script
+    if (multisite and multisite == "yes"):
+        os.system("/app/bin/multisite_search_replace")
+    else:
+        os.system("/app/bin/search_replace")
+
+    # Create a dev admin user
+    os.system("wp user create lando lando@lndo.site --user_pass=lando --role=administrator")
+
+    # Set email address to an internal address
+    os.system('wp option update admin_email lando@lndo.site')
+
+    # Super-Admin on multisite
+    if multisite and multisite == "yes" :
+        os.system("wp super-admin add lando")
+
+
+# Run
+main()

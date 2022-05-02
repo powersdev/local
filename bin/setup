@@ -1,0 +1,63 @@
+#!/usr/bin/python3
+
+import getpass, os
+from subprocess import Popen, PIPE
+
+# Globals 
+repo = os.environ.get('repo')
+vip = "wpcomvip" in repo
+multisite = "yes" == os.environ.get('multisite')
+
+
+# Download WordPress
+def fetch_wordpress():
+    os.system("curl -O https://wordpress.org/latest.tar.gz")
+    os.system("tar -xvf latest.tar.gz")
+    os.system("rm latest.tar.gz")
+
+
+# Clone the repo
+def fetch_repo():
+    os.system('git clone {} theme'.format(repo))
+
+    if vip:
+        os.system('rsync -avh theme/ /app/wordpress/wp-content')
+    else:
+        os.system('rsync -avh theme/ /app/wordpress')
+
+    os.system('rm -rf theme')
+
+
+# Run the site installation script
+def install_wordpress():
+    os.chdir('/app/wordpress')
+
+    os.system('/app/bin/core_install')
+
+
+# Cloning VIP Go mu-plugins
+def fetch_vip_muplugins():
+    os.system('git clone git@github.com:Automattic/vip-go-mu-plugins-built.git')
+    os.system('rsync -avh ./vip-go-mu-plugins-built/ /app/wordpress/wp-content/mu-plugins')
+    os.system('rm -rf vip-go-mu-plugins-built')
+
+
+# Activate theme and install dependencies
+def install_theme_deps():
+    os.system('/app/bin/theme_install')
+
+
+# Main method
+def main():
+    fetch_wordpress()
+    fetch_repo()
+    install_wordpress()
+
+    if vip:
+        fetch_vip_muplugins()
+
+    install_theme_deps()
+
+
+# Run program
+main()

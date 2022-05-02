@@ -1,0 +1,52 @@
+#!/usr/bin/python3
+
+import io, json, os, subprocess
+
+themes = os.environ.get("themes")
+themes_dir = "/app/wordpress/wp-content/themes"
+
+
+# Run command in bash shell.
+def bash(cmd):
+    subprocess.run(['/bin/bash', '-i', '-c', cmd])
+
+
+# Run grunt, but stop when watch task starts
+def run_grunt():
+    proc = subprocess.Popen(["/bin/bash", "-i", "-c", "grunt"], stdout=subprocess.PIPE)
+    for line in io.TextIOWrapper(proc.stdout, encoding="utf-8"):
+        if "Waiting..." in line:
+            return
+
+
+for theme in next(os.walk(themes_dir))[1]:
+    if "twenty" in theme:
+        continue
+
+    print("Setting up deps for {theme}".format(theme=theme))
+
+    # Switch to the theme folder
+    path = "{dir}/{theme}".format(dir=themes_dir, theme=theme)
+    os.chdir(path)
+
+    if not os.path.isfile(path + "/package.json"):
+        continue
+
+    # Set correct node version if defined
+    if os.path.isfile(path + "/.nvmrc"):
+        bash('nvm install')
+
+    # Install node dependencies
+    bash('npm install --loglevel=error')
+
+    f = open('package.json')
+    package = json.load(f)
+
+    if 'grunt' in package['dependencies']:
+        run_grunt()
+
+    elif 'build' in package['scripts']:
+        bash('npm run build')
+
+    elif 'prod' in package['scripts']:
+        bash('npm run prod')

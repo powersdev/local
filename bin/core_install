@@ -1,0 +1,95 @@
+#!/usr/bin/python3
+
+import os
+
+repo = os.environ.get('repo')
+multisite = os.environ.get('multisite') or ''
+
+name = os.environ.get('LANDO_APP_NAME')
+domain = name + '.lndo.site'
+
+is_multisite = ("yes" in multisite)
+is_vip = ("wpcomvip" in repo)
+
+
+# Generate a wp-config file.
+def generate_site_config():
+    default_config = """
+define( 'WP_DEBUG_LOG', true );
+define( 'WP_DEBUG_DISPLAY', false );
+define( 'WP_ENVIRONMENT_TYPE', 'local' );
+"""
+
+    multisite_config = """
+define( 'WP_ALLOW_MULTISITE', true );
+define( 'MULTISITE', true );
+define( 'SUBDOMAIN_INSTALL', false );
+define( 'PATH_CURRENT_SITE', '/' );
+define( 'SITE_ID_CURRENT_SITE', 1 );
+define( 'BLOG_ID_CURRENT_SITE', 1 );
+"""
+
+    vip_config = """
+/* VIP Go Specific Configuration */
+
+if ( file_exists( __DIR__ . '/wp-content/vip-config/vip-config.php' ) ) {
+    require_once( __DIR__ . '/wp-content/vip-config/vip-config.php' );
+}
+
+define( 'DISALLOW_FILE_EDIT', true );
+define( 'DISALLOW_FILE_MODS', true );
+define( 'AUTOMATIC_UPDATER_DISABLED', true );
+define( 'JETPACK_DEV_DEBUG', true );
+"""
+
+    config = default_config
+    command = """wp config create --dbname=wordpress --dbuser=wordpress --dbpass=wordpress --dbhost=database --extra-php <<PHP {} 
+PHP"""
+
+    if is_multisite:
+        config += multisite_config
+
+    if is_vip:
+        config += vip_config
+
+    os.system(command.format(config))
+    os.system("wp config delete WP_DEBUG")
+    os.system("wp config set WP_HOME https://{}".format(domain))
+    os.system("wp config set WP_SITEURL https://{}".format(domain))
+
+
+# Run wp core installation command.
+def install_wordpress():
+    prefix = "wp core install"
+
+    if is_multisite:
+        prefix = "wp core multisite-install --skip-config"
+
+    command = prefix + ' --url="{}" --title="{}" --admin_user=lando ' \
+              '--admin_password=lando --admin_email=lando@lndo.site'.format(
+        domain, name)
+
+    os.system(command)
+
+
+# Add the appropriate apache configuration file.
+def generate_htaccess():
+    file = "htaccess-single"
+
+    if is_multisite:
+        file = "htaccess-multi"
+
+    command = "cp -n /app/config/{} /app/wordpress/.htaccess".format(file)
+
+    os.system(command)
+
+
+# Main method.
+def main():
+    generate_site_config();
+    install_wordpress();
+    generate_htaccess();
+
+
+# Run
+main()

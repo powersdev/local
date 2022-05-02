@@ -1,0 +1,68 @@
+#!/usr/bin/python3
+
+import os, subprocess
+from urllib.parse import urlparse
+
+LOCAL_DOMAIN = os.environ.get('LANDO_APP_NAME') + ".lndo.site"
+
+
+def get_siteurl():
+    command = "wp db query 'SELECT option_value from wp_options where option_name=\"siteurl\"' --skip-column-names --batch"
+
+    output = subprocess.check_output(command, shell=True).decode()
+
+    return "".join(output.strip())
+
+
+def update_htaccess(url):
+    url = "".join(url.split())
+
+    with open("/app/wordpress/.htaccess", "r") as reader:
+        lines = reader.readlines()
+
+    def change_url(line):
+        if "wp-content/uploads" in line:
+            line = "RewriteRule ^(wp-content/uploads/.+)$ {url}/$1 [L,R=301,NE]".format(url=url)
+            line = " ".join(line.split()) + "\n"
+
+        return line
+
+    lines = map(change_url, lines)
+
+    with open("/app/wordpress/.htaccess", "w") as writer:
+        for line in lines:
+            writer.write(line)
+
+
+def run_command(command):
+    while True:
+        output = subprocess.check_output(command, shell=True).decode()
+
+        if "Made 0 replacements." in output:
+            break
+
+
+def generate_command(domain):
+    command = 'wp search-replace "{old_url}" "{new_url}" --precise --skip-columns=guid --skip-tables=wp_users'
+
+    url = urlparse(domain)
+
+    return command.format(
+        old_url=url.hostname + url.path,
+        new_url=LOCAL_DOMAIN
+    )
+
+
+# Main method
+def main():
+    domain = get_siteurl()
+
+    command = generate_command(domain)
+
+    run_command(command)
+
+    update_htaccess(domain)
+
+
+# Run
+main()

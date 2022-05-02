@@ -1,0 +1,22 @@
+# BEGIN Uploads
+
+RewriteEngine On
+RewriteBase /
+
+RewriteRule ^(wp-content/uploads/.+)$ https://www.boilerplate.com/$1 [L,R=301,NE]
+
+# END Uploads
+
+
+# BEGIN WordPress
+
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteBase /
+
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+
+# END WordPress
