@@ -29,7 +29,7 @@ services:
 recipe: wordpress
 config:
   xdebug: false
-  php: "7.4"
+  php: "8.0"
   database: mysql
   webroot: wordpress
   composer_version: 2 
