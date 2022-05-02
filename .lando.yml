@@ -1,17 +1,17 @@
-name: boilerplate
+name: local
 proxy: # these have to match the name above
   appserver:
-    - boilerplate.lndo.site
+    - local.lndo.site
   pma:
-    - pma.boilerplate.lndo.site
+    - pma.local.lndo.site
   mailhog:
-    - mh.boilerplate.lndo.site
+    - mh.local.lndo.site
 services:
   appserver:
     overrides:
       environment:
         # General site information
-        wpengine_name: boilerplate
+        wpengine_name: local
         repo: git@github.com:powersdev/scaffold
         multisite: no
         # SSH Keys
