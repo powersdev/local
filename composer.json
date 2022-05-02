@@ -1,0 +1,19 @@
+{
+  "name": "powersdev/local",
+  "authors": [
+    {
+      "name": "Jon Powers",
+      "email": "jon@powers.dev"
+    }
+  ],
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "require-dev": {
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.7",
+    "phpcompatibility/phpcompatibility-wp": "*",
+    "automattic/vipwpcs": "^2.3"
+  }
+}
