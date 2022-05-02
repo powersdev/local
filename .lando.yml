@@ -15,5 +15,5 @@ services:
         repo: git@github.com:powersdev/scaffold
         multisite: no
         # SSH Keys
-        repo_ssh_key: id_rsa
-        wpe_ssh_key: id_rsa
+        repo_ssh_key: id_ed25519
+        wpe_ssh_key: id_ed25519
