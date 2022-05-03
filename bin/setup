@@ -1,63 +1,66 @@
-#!/usr/bin/python3
+#!/usr/bin/env hush
 
 import getpass, os
 from subprocess import Popen, PIPE
 
 # Globals 
-repo = os.environ.get('repo')
-vip = "wpcomvip" in repo
-multisite = "yes" == os.environ.get('multisite')
+repo = std.env('repo')
+vip = std.contains(repo, "wpcomvip")
+multisite = std.contains(std.env("multisite"), "yes")
 
 
 # Download WordPress
-def fetch_wordpress():
-    os.system("curl -O https://wordpress.org/latest.tar.gz")
-    os.system("tar -xvf latest.tar.gz")
-    os.system("rm latest.tar.gz")
+function fetch_wordpress()
+    {
+        curl -O https://wordpress.org/latest.tar.gz;
+        tar -xvf latest.tar.gz;
+        rm latest.tar.gz;
+
+    }
+end
 
 
 # Clone the repo
-def fetch_repo():
-    os.system('git clone {} theme'.format(repo))
+function fetch_repo()
+    { git clone $repo theme }
+    
+    if vip then
+        { rsync -avh theme/ /app/wordpress/wp-content }
+    else
+        { rsync -avh theme/ /app/wordpress }
+    end
 
-    if vip:
-        os.system('rsync -avh theme/ /app/wordpress/wp-content')
-    else:
-        os.system('rsync -avh theme/ /app/wordpress')
-
-    os.system('rm -rf theme')
+    { rm -rf theme }
+end
 
 
 # Run the site installation script
-def install_wordpress():
-    os.chdir('/app/wordpress')
-
-    os.system('/app/bin/core_install')
+function install_wordpress()
+    { /app/bin/core_install }
+end
 
 
 # Cloning VIP Go mu-plugins
-def fetch_vip_muplugins():
-    os.system('git clone git@github.com:Automattic/vip-go-mu-plugins-built.git')
-    os.system('rsync -avh ./vip-go-mu-plugins-built/ /app/wordpress/wp-content/mu-plugins')
-    os.system('rm -rf vip-go-mu-plugins-built')
+function fetch_vip_muplugins()
+{
+    git clone git@github.com:Automattic/vip-go-mu-plugins-built.git;
+    rsync -avh ./vip-go-mu-plugins-built/ /app/wordpress/wp-content/mu-plugins;
+    rm -rf vip-go-mu-plugins-built:
+} 
+end
 
 
 # Activate theme and install dependencies
-def install_theme_deps():
+function install_theme_deps()
     os.system('/app/bin/theme_install')
+end
 
+fetch_wordpress()
+fetch_repo()
+install_wordpress()
 
-# Main method
-def main():
-    fetch_wordpress()
-    fetch_repo()
-    install_wordpress()
+if vip then
+    fetch_vip_muplugins()
+end
 
-    if vip:
-        fetch_vip_muplugins()
-
-    install_theme_deps()
-
-
-# Run program
-main()
+install_theme_deps()

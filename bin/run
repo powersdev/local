@@ -1,9 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env hush
 
-source /var/www/.bashrc
-
-# Set up wordpress if not yet installed 
-if [ ! -d "/app/wordpress" ]; then
-	/app/bin/setup
-fi
-
+# Set up wordpress if not yet installed
+{
+    if [ ! -d "/app/wordpress" ]; then
+        /app/bin/setup
+    fi
+}

@@ -1,18 +1,19 @@
-#!/bin/bash
+#!/usr/bin/env hush
 
 # Install nvm and node
-touch /var/www/.bashrc
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-source /var/www/.bashrc
+{
+  touch /var/www/.bashrc;
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash;
+}
 
 # Install node 14 LTS
-nvm install lts/fermium
+{ nvm install lts/fermium }
 
 # Install global node deps
-npm i -g grunt sass
+{ npm i -g grunt sass }
 
 # Install global python deps
-pip3 install tldextract --no-warn-script-location
+{ pip3 install tldextract --no-warn-script-location }
 
 # Install tools
-composer install --working-dir=/app
+{ composer install --working-dir=/app }

@@ -1,77 +1,97 @@
-#!/bin/bash
+#!/usr/bin/env hush
 
 # Exit if not wpengine site
-if [ -z "$wpengine_name" ]
-then
-    echo "WPEngine Name not set. This script only works for WPEngine Environments."
-    echo "Please add 'wpengine_name' under environment and run 'lando rebuild'"
-    exit
-fi
+{
+	if [ -z "$wpengine_name" ]
+	then
+		echo "WPEngine Name not set. This script only works for WPEngine Environments.";
+		echo "Please add 'wpengine_name' under environment and run 'lando rebuild'";
+		exit
+	fi
+}
 
 # Welcome message / sanity check
-echo "Running Pull for site: $wpengine_name.wpengine.com"
+{ echo "Running Pull for site: $wpengine_name.wpengine.com" }
 
 # Add auth to ssh-agent
-eval $(ssh-agent)
-ssh-add "/user/.ssh/$wpe_ssh_key"
+{
+	eval $(ssh-agent);
+	ssh-add "/user/.ssh/$wpe_ssh_key";
+}
 
-WPENGINE_SSH_URL="$wpengine_name@$wpengine_name.ssh.wpengine.net"
-WPENGINE_SSH_FOLDER="$WPENGINE_SSH_URL:~/sites/$wpengine_name"
+std.export("WPENGINE_SSH_URL", "$wpengine_name@$wpengine_name.ssh.wpengine.net")
+std.export("WPENGINE_SSH_FOLDER", "$WPENGINE_SSH_URL:~/sites/$wpengine_name")
 
 # Get the plugins
-echo "Fetching Plugins"
-rsync -ah --info=progress2 "$WPENGINE_SSH_FOLDER/wp-content/plugins/" wp-content/plugins
+{
+	echo "Fetching Plugins";
+	rsync -ah --info=progress2 "$WPENGINE_SSH_FOLDER/wp-content/plugins/" wp-content/plugins;
+}
 
 # Get the uploads (excluding log files)
 #echo "Fetching Uploads"
 #rsync -ah --info=progress2 --exclude '*.log' "$WPENGINE_SSH_FOLDER/wp-content/uploads/" wp-content/uploads
 
 # Create db dump named 'mysql.sql'
-echo "Dumping database on prod"
-echo -e "\nIGNORE ANY ERRORS THAT DO NOT RESULT IN A CRASH\n"
-ssh "$WPENGINE_SSH_URL" "cd sites/$wpengine_name && wp db export mysql.sql"
+{
+	echo "Dumping database on prod";
+	ssh "$WPENGINE_SSH_URL" "cd sites/$wpengine_name && wp db export mysql.sql";
+}
 
 # Copy db dump to local
-echo "Copying to local"
-scp "$WPENGINE_SSH_FOLDER/mysql.sql" .
+{
+	echo "Copying to local";
+	scp "$WPENGINE_SSH_FOLDER/mysql.sql" .;
+}
 
 # Delete db dump from prod server
-echo "Cleaning up prod"
-ssh "$WPENGINE_SSH_URL" "cd sites/$wpengine_name && rm mysql.sql"
+{
+	echo "Cleaning up prod";
+	ssh "$WPENGINE_SSH_URL" "cd sites/$wpengine_name && rm mysql.sql";
+}
 
 # Import db dump locally
-echo "Importing on local"
-wp db clean --yes
-wp db import mysql.sql
-
-# Search & Replace the site url
-echo "Fixing site url"
-if [[ "yes" == $multisite ]]
-then
-	/app/bin/multisite_search_replace
-else
-	/app/bin/search_replace
-fi
-
-echo "Miscellaneous Local Changes"
-
-# Disable mail plugins that might interfere with mailhog
-wp plugin deactivate mailgun --quiet
-wp plugin deactivate wp-mail-smtp --quiet
-
-# Create a dev admin user
-wp user create lando lando@$LANDO_APP_NAME.lndo.site --user_pass=lando --role=administrator
-
-# Set email address to an internal address
-wp option update admin_email "$LANDO_APP_NAME@$LANDO_APP_NAME.lndo.site"
-
-# Super-Admin on multisite
-if [[ "yes" == $multisite ]]
-then
-    wp super-admin add lando 
-    wp site list --fields=url --format=json | jq -r '.[].url' | xargs -I % wp user update lando --url=% --role=administrator
-fi
+{
+	echo "Importing on local";
+	wp db clean --yes;
+	wp db import mysql.sql;
+}
 
 # Clean Up database dump
-echo "Cleaning up local"
-rm mysql.sql
+{
+	echo "Cleaning up local"
+	rm mysql.sql
+}
+
+# Search & Replace the site url
+{
+	echo "Fixing site url"
+	if [[ "yes" == $multisite ]]
+	then
+		/app/bin/multisite_search_replace
+	else
+		/app/bin/search_replace
+	fi
+}
+
+# Miscellaneous Local Changes
+{
+	# Disable mail plugins that might interfere with mailhog
+	wp plugin deactivate mailgun --quiet
+	wp plugin deactivate wp-mail-smtp --quiet
+
+	# Create a dev admin user
+	wp user create lando lando@$LANDO_APP_NAME.lndo.site --user_pass=lando --role=administrator
+
+	# Set email address to an internal address
+	wp option update admin_email "$LANDO_APP_NAME@$LANDO_APP_NAME.lndo.site"
+}
+
+# Super-Admin on multisite
+{
+	if [[ "yes" == $multisite ]]
+	then
+		wp super-admin add lando 
+		wp site list --fields=url --format=json | jq -r '.[].url' | xargs -I % wp user update lando --url=% --role=administrator
+	fi
+}
