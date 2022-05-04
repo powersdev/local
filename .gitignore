@@ -4,6 +4,7 @@
 # Directories to keep
 !/bin/
 !/config/
+!/docs/
 
 # Files to keep
 !/.gitignore
