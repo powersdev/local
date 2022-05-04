@@ -6,6 +6,8 @@ proxy: # these have to match the name above
     - pma.local.lndo.site
   mailhog:
     - mh.local.lndo.site
+config:
+  php: "8.0"
 services:
   appserver:
     overrides:
