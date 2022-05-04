@@ -1,0 +1,14 @@
+# Ignore everything by default
+/*
+
+# Directories to keep
+!/bin/
+!/config/
+
+# Files to keep
+!/.gitignore
+!/.lando.base.yml
+!/.lando.yml
+!/Readme.md
+!/composer.json
+!/phpcs.xml
