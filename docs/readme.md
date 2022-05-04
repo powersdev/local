@@ -9,7 +9,8 @@
 
 [Detailed notes here](notes.md#landofiles)
     
-Input ssh url of the `repo` and the `multisite` status. 
+Input ssh url of the `repo` and the `multisite` status. Default repo is [Scaffold](//scaffold.powers.dev).
+
 If the site is on wpengine, add the `wpengine_name` (for pulling data).
 
 Everything else is inferred from the repository or the imported database.
