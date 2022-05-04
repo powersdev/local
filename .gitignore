@@ -10,6 +10,6 @@
 !/.gitignore
 !/.lando.base.yml
 !/.lando.yml
-!/Readme.md
+!/README.md
 !/composer.json
 !/phpcs.xml
