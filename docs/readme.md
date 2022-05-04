@@ -1,3 +1,6 @@
+# Overview
+
+Automated local WordPress development environment 
 # Quick Start
 
 1. Clone this repo and rename it `git clone git@github.com:powersdev/local site-name`
