@@ -15,7 +15,6 @@ config/
 
 # Code Quality
 composer.json
-phpcs-compat.xml
 phpcs.xml
 ```
 
