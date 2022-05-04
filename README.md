@@ -2,4 +2,4 @@
 
 Automated local WordPress development environment
 
-[View Docs](https://powersdev.github.io/local)
+[View Docs](https://local.powers.dev)
