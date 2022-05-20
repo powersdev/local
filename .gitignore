@@ -1,6 +1,5 @@
 # Ignore everything by default
 /*
-/config/.env
 
 # Directories to keep
 !/bin/
