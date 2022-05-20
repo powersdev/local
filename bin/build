@@ -5,6 +5,11 @@ touch /var/www/.bashrc
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
 source /var/www/.bashrc
 
+# Node Symlinks
+ln -s $(which node) /usr/local/sbin/node
+ln -s $(which npm) /usr/local/sbin/npm
+ln -s $(which npx) /usr/local/sbin/npx
+
 # Install node 14 LTS
 nvm install lts/fermium
 
