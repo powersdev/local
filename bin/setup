@@ -5,6 +5,7 @@ from subprocess import Popen, PIPE
 
 # Globals 
 repo = os.environ.get('repo')
+build_themes = "yes" == os.environ.get('build_themes')
 vip = "wpcomvip" in repo
 multisite = "yes" == os.environ.get('multisite')
 
@@ -56,7 +57,8 @@ def main():
     if vip:
         fetch_vip_muplugins()
 
-    install_theme_deps()
+    if build_themes:
+        install_theme_deps()
 
 
 # Run program
