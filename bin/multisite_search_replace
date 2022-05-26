@@ -78,6 +78,7 @@ def update_tables(blog_id, old_url, new_url):
     print('\nNow Replacing:')
     print('"{old}" -> "{new}"\n'.format(old=prod, new=local))
 
+    prev = ""
     while True:
         output = subprocess.check_output(
             command.format(
@@ -89,8 +90,10 @@ def update_tables(blog_id, old_url, new_url):
 
         print(output)
 
-        if "0 replacements" in output:
+        if "0 replacements" in output or prev == output:
             break
+
+        prev = output
 
 
 # Fetch list of blogs
