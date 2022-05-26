@@ -22,7 +22,7 @@ def get_primary_domain():
 def set_current_site():
     domain = get_primary_domain()
 
-    command = 'wp config set DOMAIN_CURRENT_SITE "{}" --add'.format(domain)
+    command = 'wp config set DOMAIN_CURRENT_SITE "{}" --add'.format(domain.rstrip("/"))
 
     os.system(command)
 
