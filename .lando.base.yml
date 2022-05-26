@@ -85,3 +85,12 @@ tooling:
     description: Update Core, Plugins, and Themes
     dir: /app/wordpress
     cmd: wp core update && wp plugin update --all && wp theme update --all
+  npm:
+    service: appserver
+    cmd: /usr/local/sbin/npm
+  npx:
+    service: appserver
+    cmd: /usr/local/sbin/npx
+  node:
+    service: appserver
+    cmd: /usr/local/sbin/node

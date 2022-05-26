@@ -8,6 +8,11 @@ source /var/www/.bashrc
 # Install node 14 LTS
 nvm install lts/fermium
 
+# Node Symlinks
+ln -s $(which node) /usr/local/sbin/node
+ln -s $(which npm) /usr/local/sbin/npm
+ln -s $(which npx) /usr/local/sbin/npx
+
 # Install global node deps
 npm i -g grunt sass
 
