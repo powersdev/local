@@ -16,7 +16,7 @@ services:
         wpengine_name: local
         repo: git@github.com:powersdev/scaffold
         multisite: no
-        build_themes: yes
+        build_themes: no
         # SSH Keys
         repo_ssh_key: id_ed25519
         wpe_ssh_key: id_ed25519
