@@ -94,3 +94,9 @@ tooling:
   node:
     service: appserver
     cmd: /usr/local/sbin/node
+  install-debug:
+    service: appserver
+    cmd: |
+      wget "https://github.com/powersdev/wp-debug/releases/latest/download/debug.zip" -O /tmp/debug.zip
+      unzip /tmp/debug.zip -d /app/wordpress/wp-content/mu-plugins/
+      rm /tmp/debug.zip
